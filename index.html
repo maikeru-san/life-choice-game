@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>人生の選択と運命の波 - Life Choices Game</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="game-container">
+    <!-- ヘッダーUI -->
+    <header class="hud">
+      <div class="hud-item timer-card">
+        <span class="label">残り時間</span>
+        <span class="value" id="timer-display">30.0</span><span class="unit">s</span>
+        <div class="sub-progress-bar">
+          <div class="sub-progress-fill" id="auto-move-bar" title="次の自動移動までの時間"></div>
+        </div>
+      </div>
+
+      <div class="hud-item manual-card">
+        <span class="label">自分の選択権</span>
+        <div class="choice-dots" id="choice-dots">
+          <!-- 選択回数アイコンがJSで生成されます -->
+        </div>
+        <span class="sub-label">残り <strong id="choices-left">5</strong> / 5 回</span>
+      </div>
+
+      <div class="hud-item happiness-card">
+        <span class="label">現在の幸福度</span>
+        <span class="value" id="score-display">±0</span><span class="unit">pt</span>
+      </div>
+    </header>
+
+    <!-- キャンバス領域 -->
+    <div class="canvas-wrapper">
+      <canvas id="gameCanvas" width="900" height="600"></canvas>
+      
+      <!-- スタート前オーバーレイ -->
+      <div id="start-overlay" class="overlay">
+        <div class="overlay-card">
+          <h1>人生の選択と運命の波</h1>
+          <p class="concept">
+            人生の2択の選択とタイミングが、やがて大きな差を生み出します。<br>
+            最良の選択肢は存在せず、運の要素が多分に結果を左右します。
+          </p>
+          <div class="rules-box">
+            <ul>
+              <li><strong>緑のドット</strong>があなたです。乗っている長方形（柱）とともに上下動します。</li>
+              <li><strong>上に行くほど幸福 (+)、下に行くほど不幸 (-)</strong> です。</li>
+              <li><strong>3秒ごと</strong>に「運命の流れ」によって左右どちらかに自動移動します。</li>
+              <li>あなたは<strong>30秒のうち5回だけ</strong>、自分の意思で <kbd>←</kbd> <kbd>→</kbd> キーで左右に移動できます。</li>
+            </ul>
+          </div>
+          <button id="start-btn" class="btn btn-primary">人生を始める (Space / クリック)</button>
+        </div>
+      </div>
+
+      <!-- リザルトオーバーレイ -->
+      <div id="result-overlay" class="overlay hidden">
+        <div class="overlay-card result-card">
+          <h2 id="result-title">人生の幕引き</h2>
+          <div class="result-score-box">
+            <span class="result-score-label">最終幸福度</span>
+            <div class="result-score-val" id="final-score">±0 pt</div>
+            <div class="result-rank" id="result-rank">平穏な人生</div>
+          </div>
+          <p class="result-comment" id="result-comment">
+            波に身を任せ、限られた選択の中で精一杯歩んだ人生でした。
+          </p>
+          <div class="result-stats">
+            <div class="stat-item">
+              <span class="stat-label">自分の選択実行</span>
+              <span class="stat-val" id="stat-manual-count">0 / 5 回</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">最高到達幸福度</span>
+              <span class="stat-val" id="stat-max-score">+0 pt</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">最低到達幸福度</span>
+              <span class="stat-val" id="stat-min-score">-0 pt</span>
+            </div>
+          </div>
+          <button id="replay-btn" class="btn btn-primary">もう一度やり直す (Space / クリック)</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- フッター操作説明 -->
+    <footer class="footer-guide">
+      <div class="guide-item">
+        <kbd>←</kbd> <kbd>→</kbd> : 自分の意思で左右に移動 (残り5回)
+      </div>
+      <div class="guide-item fate-notice">
+        ⚡ 3秒ごとに運命の風（左右ランダム移動）が吹きます
+      </div>
+    </footer>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
