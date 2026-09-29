@@ -33,6 +33,11 @@ const statManualCount = document.getElementById('stat-manual-count');
 const statMaxScore = document.getElementById('stat-max-score');
 const statMinScore = document.getElementById('stat-min-score');
 
+// グラフ & 人生の転機用要素
+const graphCanvas = document.getElementById('graphCanvas');
+const graphCtx = graphCanvas ? graphCanvas.getContext('2d') : null;
+const turningPointsList = document.getElementById('turning-points-list');
+
 // --- ゲーム状態管理 ---
 let gameState = 'ready'; // 'ready' | 'playing' | 'ended'
 let gameTime = 0; // 経過時間(秒)
@@ -41,15 +46,20 @@ let nextAutoMoveTime = AUTO_MOVE_INTERVAL;
 let manualChoicesLeft = MAX_MANUAL_CHOICES;
 let manualMovesUsed = 0;
 
-let baseCenterY = canvas.height / 2; // スタート時の基準高度 (280)
+let baseCenterY = canvas.height / 2; // スタート時の基準高度 (300)
 let maxHappinessRecorded = 0;
 let minHappinessRecorded = 0;
 
 // 移動エフェクト用
 let moveEffects = [];
 
-// 軌跡ログ [{x, y, time}]
+// 軌跡ログ [{x, y, time}] (キャンバス描画用)
 let trajectory = [];
+
+// 幸福度変遷ログ [{ time, score, barIndex, isManual }] (30秒グラフ用)
+let happinessLog = [];
+// ユーザー手動操作イベントログ [{ time, score, dir }]
+let manualEvents = [];
 
 // --- バー（長方形）オブジェクト配列 ---
 let bars = [];
@@ -116,12 +126,22 @@ function resetGame() {
   minHappinessRecorded = 0;
   trajectory = [];
   moveEffects = [];
+  happinessLog = [];
+  manualEvents = [];
 
   initBars();
 
   player.barIndex = 4; // 真ん中のバー
   player.y = baseCenterY;
   player.displayX = bars[player.barIndex].x;
+
+  // 初期点ログ
+  happinessLog.push({
+    time: 0,
+    score: 0,
+    barIndex: 4,
+    isManual: false
+  });
 
   updateChoiceDotsUI();
   updateHUD(0);
@@ -145,11 +165,22 @@ function movePlayer(direction, isManual = false) {
     }
   }
 
+  const currentScore = Math.round((baseCenterY - player.y) * SCORE_SCALE);
+
   if (isManual) {
     if (manualChoicesLeft <= 0) return;
     manualChoicesLeft--;
     manualMovesUsed++;
     updateChoiceDotsUI();
+
+    // 手動操作イベント記録
+    manualEvents.push({
+      time: gameTime,
+      score: currentScore,
+      dir: direction,
+      fromIdx: currentIdx,
+      toIdx: targetIdx
+    });
   }
 
   const prevX = bars[player.barIndex].x;
@@ -221,6 +252,11 @@ function endGame() {
   statMaxScore.textContent = `+${Math.round(maxHappinessRecorded)} pt`;
   statMinScore.textContent = `${Math.round(minHappinessRecorded)} pt`;
 
+  // 人生の転機検出 & グラフ描画
+  const turningPoints = detectTurningPoints();
+  renderResultGraph(turningPoints);
+  renderTurningPointsList(turningPoints);
+
   resultOverlay.classList.remove('hidden');
 }
 
@@ -233,6 +269,13 @@ function update(dt) {
   // 30秒終了判定
   if (gameTime >= GAME_DURATION) {
     gameTime = GAME_DURATION;
+    // 最終点を記録
+    const finalHappiness = (baseCenterY - player.y) * SCORE_SCALE;
+    happinessLog.push({
+      time: GAME_DURATION,
+      score: finalHappiness,
+      barIndex: player.barIndex
+    });
     endGame();
     return;
   }
@@ -270,6 +313,11 @@ function update(dt) {
       y: player.y,
       time: gameTime,
       happiness: currentHappiness
+    });
+    happinessLog.push({
+      time: gameTime,
+      score: currentHappiness,
+      barIndex: player.barIndex
     });
   }
 
@@ -522,3 +570,383 @@ replayBtn.addEventListener('click', replayGame);
 // 初期起動
 resetGame();
 requestAnimationFrame(gameLoop);
+
+// ==========================================
+// 人生の転機（3箇所）検出 & グラフ描画ロジック
+// ==========================================
+
+// --- 人生の転機（3箇所）の自動検出 ---
+function detectTurningPoints() {
+  if (happinessLog.length < 10) return [];
+
+  let candidates = [];
+
+  // 1. 手動操作（ユーザーの決断）の転機候補
+  manualEvents.forEach(me => {
+    // 操作前後1.2秒でのスコア変化量
+    const beforeItem = happinessLog.find(h => h.time >= me.time - 1.2) || happinessLog[0];
+    const afterItem = happinessLog.find(h => h.time >= me.time + 1.2) || happinessLog[happinessLog.length - 1];
+    const delta = afterItem.score - beforeItem.score;
+
+    candidates.push({
+      time: me.time,
+      score: me.score,
+      importance: 60 + Math.abs(delta) * 1.5,
+      isManual: true,
+      delta: delta,
+      type: 'manual'
+    });
+  });
+
+  // 2. 変曲点（山・谷、または大きな落差のある波）
+  const step = Math.max(1, Math.floor(happinessLog.length / 40));
+  for (let i = step * 2; i < happinessLog.length - step * 2; i += step) {
+    const cur = happinessLog[i];
+    const prev = happinessLog[i - step * 2];
+    const next = happinessLog[i + step * 2];
+    const deltaPrev = cur.score - prev.score;
+    const deltaNext = next.score - cur.score;
+
+    const isPeak = deltaPrev > 8 && deltaNext < -8;
+    const isValley = deltaPrev < -8 && deltaNext > 8;
+    const totalDelta = next.score - prev.score;
+
+    if (isPeak || isValley || Math.abs(totalDelta) > 20) {
+      candidates.push({
+        time: cur.time,
+        score: cur.score,
+        importance: Math.abs(totalDelta) + (isPeak || isValley ? 35 : 0),
+        isManual: false,
+        delta: totalDelta,
+        type: isPeak ? 'peak' : (isValley ? 'valley' : (totalDelta > 0 ? 'rise' : 'fall'))
+      });
+    }
+  }
+
+  // 重要度順にソート
+  candidates.sort((a, b) => b.importance - a.importance);
+
+  // 時間間隔が最低4.5秒以上離れるように3点を選出
+  let selected = [];
+  for (let cand of candidates) {
+    const isTooClose = selected.some(s => Math.abs(s.time - cand.time) < 4.5);
+    if (!isTooClose) {
+      selected.push(cand);
+      if (selected.length === 3) break;
+    }
+  }
+
+  // 3点に満たない場合、3つの時間帯 (2-10s, 10-20s, 20-28s) から補充
+  if (selected.length < 3) {
+    const zones = [[2, 10], [10, 20], [20, 28]];
+    for (let zone of zones) {
+      if (selected.length >= 3) break;
+      const alreadyHasInZone = selected.some(s => s.time >= zone[0] && s.time <= zone[1]);
+      if (!alreadyHasInZone) {
+        const zoneItems = happinessLog.filter(h => h.time >= zone[0] && h.time <= zone[1]);
+        if (zoneItems.length > 0) {
+          const midItem = zoneItems[Math.floor(zoneItems.length / 2)];
+          selected.push({
+            time: midItem.time,
+            score: midItem.score,
+            isManual: false,
+            delta: 0,
+            type: 'wave'
+          });
+        }
+      }
+    }
+  }
+
+  // 時間順（① ② ③）にソート
+  selected.sort((a, b) => a.time - b.time);
+
+  // 各転機にドラマチックなタイトル・説明文・タグを割り当て
+  return selected.map((tp, idx) => {
+    let title = '';
+    let desc = '';
+    let tag = '';
+    let tagClass = 'rise';
+
+    if (tp.isManual) {
+      if (tp.delta > 10) {
+        title = '自らの決断による飛躍';
+        desc = '周囲の波に流されず下した英断。自ら切り拓いた新天地が、大きな上昇気流を捉えた決定的な瞬間。';
+        tag = '自らの決断';
+        tagClass = 'decision';
+      } else if (tp.delta < -10) {
+        title = '果敢な挑戦と蹉跌';
+        desc = '現状打破を狙って下した自らの選択。しかし飛び込んだ新世界には、予想以上の激しい逆風が待ち受けていた。';
+        tag = '自らの決断';
+        tagClass = 'decision';
+      } else {
+        title = '静かなる覚悟の舵切り';
+        desc = '周囲が気づかぬうちに下した自分だけの選択。この時の進路変更が、後の運命の大きな伏線となった。';
+        tag = '自らの決断';
+        tagClass = 'decision';
+      }
+    } else if (tp.type === 'valley') {
+      title = 'どん底からのV字再起';
+      desc = '耐え難い苦境の底を打ち、新たな潮目を掴んだ瞬間。ここから人生の劇的な逆転ドラマが幕を開けた。';
+      tag = '奇跡の再起';
+      tagClass = 'rise';
+    } else if (tp.type === 'peak') {
+      title = '栄華を極めた絶頂期';
+      desc = 'あらゆる巡り合わせが味方し、人生最大の高みに到達。これまでの道のりが結実した至福のひととき。';
+      tag = '至福の頂点';
+      tagClass = 'rise';
+    } else if (tp.delta > 15) {
+      title = '青雲の志・予期せぬ追い風';
+      desc = '思いがけない幸運の波が一気に押し寄せ、自分の想像を超えた場所へと背中を押された飛躍の転機。';
+      tag = '運命の追い風';
+      tagClass = 'rise';
+    } else if (tp.delta < -15) {
+      title = '突然の逆風・不条理な試練';
+      desc = '平穏だった日々に突如吹き荒れた冷たい逆風。抗うことのできない人生の不条理を痛感させられた試練の時。';
+      tag = '時代の逆風';
+      tagClass = 'fall';
+    } else {
+      title = '平穏なる日常の拠り所';
+      desc = '激しい波乱をくぐり抜け、ようやく訪れた穏やかな凪。自分にとって本当に大切なものを見出した転換点。';
+      tag = '平穏と安息';
+      tagClass = 'rise';
+    }
+
+    return {
+      index: idx + 1,
+      time: tp.time,
+      score: tp.score,
+      isManual: tp.isManual,
+      title: title,
+      desc: desc,
+      tag: tag,
+      tagClass: tagClass
+    };
+  });
+}
+
+// --- 30秒の幸福度変遷グラフの描画 ---
+function renderResultGraph(turningPoints) {
+  if (!graphCanvas || !graphCtx || happinessLog.length === 0) return;
+
+  const w = graphCanvas.width;
+  const h = graphCanvas.height;
+  graphCtx.clearRect(0, 0, w, h);
+
+  // マージン設定
+  const padL = 48;
+  const padR = 24;
+  const padT = 20;
+  const padB = 26;
+  const plotW = w - padL - padR;
+  const plotH = h - padT - padB;
+
+  // スコアの最小・最大値からY軸レンジを計算
+  let minScore = 0;
+  let maxScore = 0;
+  happinessLog.forEach(item => {
+    if (item.score < minScore) minScore = item.score;
+    if (item.score > maxScore) maxScore = item.score;
+  });
+
+  // 0ptを中心に上下対称または適切なマージンを持たせる
+  const maxAbs = Math.max(60, Math.abs(minScore) + 15, Math.abs(maxScore) + 15);
+  const yRange = maxAbs * 2;
+  const zeroY = padT + plotH / 2;
+
+  // 座標変換ヘルパー
+  const getX = (t) => padL + (Math.max(0, Math.min(GAME_DURATION, t)) / GAME_DURATION) * plotW;
+  const getY = (s) => zeroY - (s / maxAbs) * (plotH / 2);
+
+  // 1. 背景グリッドと時間目盛り
+  graphCtx.save();
+
+  // 5秒刻みの縦グリッド
+  for (let sec = 0; sec <= GAME_DURATION; sec += 5) {
+    const x = getX(sec);
+    graphCtx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+    graphCtx.lineWidth = 1;
+    graphCtx.setLineDash([3, 3]);
+    graphCtx.beginPath();
+    graphCtx.moveTo(x, padT);
+    graphCtx.lineTo(x, padT + plotH);
+    graphCtx.stroke();
+
+    // 時間ラベル
+    graphCtx.fillStyle = 'rgba(148, 163, 184, 0.8)';
+    graphCtx.font = '10px sans-serif';
+    graphCtx.textAlign = 'center';
+    graphCtx.fillText(`${sec}s`, x, h - 10);
+  }
+
+  // 水平ゼロ基準線 (±0 pt)
+  graphCtx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+  graphCtx.lineWidth = 1.2;
+  graphCtx.setLineDash([5, 5]);
+  graphCtx.beginPath();
+  graphCtx.moveTo(padL, zeroY);
+  graphCtx.lineTo(w - padR, zeroY);
+  graphCtx.stroke();
+
+  // Y軸ラベル
+  graphCtx.fillStyle = 'rgba(148, 163, 184, 0.85)';
+  graphCtx.font = '9px sans-serif';
+  graphCtx.textAlign = 'right';
+  graphCtx.fillText('±0 pt', padL - 6, zeroY + 3);
+  graphCtx.fillText(`+${Math.round(maxAbs)}`, padL - 6, padT + 8);
+  graphCtx.fillText(`-${Math.round(maxAbs)}`, padL - 6, padT + plotH);
+
+  graphCtx.restore();
+
+  // 2. エリア塗りつぶし（幸福度プラス＝緑、マイナス＝赤）
+  graphCtx.save();
+  // プラス域の塗りつぶし
+  const gradPlus = graphCtx.createLinearGradient(0, padT, 0, zeroY);
+  gradPlus.addColorStop(0, 'rgba(74, 222, 128, 0.28)');
+  gradPlus.addColorStop(1, 'rgba(74, 222, 128, 0.02)');
+
+  graphCtx.beginPath();
+  graphCtx.moveTo(getX(happinessLog[0].time), zeroY);
+  happinessLog.forEach(item => {
+    const x = getX(item.time);
+    const y = Math.min(zeroY, getY(item.score));
+    graphCtx.lineTo(x, y);
+  });
+  graphCtx.lineTo(getX(happinessLog[happinessLog.length - 1].time), zeroY);
+  graphCtx.closePath();
+  graphCtx.fillStyle = gradPlus;
+  graphCtx.fill();
+
+  // マイナス域の塗りつぶし
+  const gradMinus = graphCtx.createLinearGradient(0, zeroY, 0, padT + plotH);
+  gradMinus.addColorStop(0, 'rgba(248, 113, 113, 0.02)');
+  gradMinus.addColorStop(1, 'rgba(248, 113, 113, 0.28)');
+
+  graphCtx.beginPath();
+  graphCtx.moveTo(getX(happinessLog[0].time), zeroY);
+  happinessLog.forEach(item => {
+    const x = getX(item.time);
+    const y = Math.max(zeroY, getY(item.score));
+    graphCtx.lineTo(x, y);
+  });
+  graphCtx.lineTo(getX(happinessLog[happinessLog.length - 1].time), zeroY);
+  graphCtx.closePath();
+  graphCtx.fillStyle = gradMinus;
+  graphCtx.fill();
+  graphCtx.restore();
+
+  // 3. 幸福度メイン折れ線ライン
+  graphCtx.save();
+  graphCtx.beginPath();
+  graphCtx.moveTo(getX(happinessLog[0].time), getY(happinessLog[0].score));
+  for (let i = 1; i < happinessLog.length; i++) {
+    const x = getX(happinessLog[i].time);
+    const y = getY(happinessLog[i].score);
+    graphCtx.lineTo(x, y);
+  }
+  graphCtx.strokeStyle = '#38bdf8';
+  graphCtx.lineWidth = 2.4;
+  graphCtx.lineCap = 'round';
+  graphCtx.lineJoin = 'round';
+  graphCtx.shadowColor = 'rgba(56, 189, 248, 0.5)';
+  graphCtx.shadowBlur = 6;
+  graphCtx.stroke();
+  graphCtx.restore();
+
+  // 4. ユーザー操作タイミングのマーカー（⚡ 橙色）
+  manualEvents.forEach(me => {
+    const mx = getX(me.time);
+    const my = getY(me.score);
+
+    graphCtx.save();
+    // 縦のガイド点線
+    graphCtx.strokeStyle = 'rgba(245, 158, 11, 0.6)';
+    graphCtx.lineWidth = 1.2;
+    graphCtx.setLineDash([3, 3]);
+    graphCtx.beginPath();
+    graphCtx.moveTo(mx, padT);
+    graphCtx.lineTo(mx, padT + plotH);
+    graphCtx.stroke();
+
+    // ひし形マーカー
+    graphCtx.fillStyle = '#f59e0b';
+    graphCtx.shadowColor = 'rgba(245, 158, 11, 0.8)';
+    graphCtx.shadowBlur = 8;
+    graphCtx.beginPath();
+    const size = 5;
+    graphCtx.moveTo(mx, my - size);
+    graphCtx.lineTo(mx + size, my);
+    graphCtx.lineTo(mx, my + size);
+    graphCtx.lineTo(mx - size, my);
+    graphCtx.closePath();
+    graphCtx.fill();
+
+    // 決断ラベル
+    graphCtx.fillStyle = '#fbbf24';
+    graphCtx.font = 'bold 9px sans-serif';
+    graphCtx.textAlign = 'center';
+    graphCtx.fillText('選択', mx, my - 8);
+    graphCtx.restore();
+  });
+
+  // 5. 人生の3大転機マーカー（① ② ③ ピンク）
+  turningPoints.forEach(tp => {
+    const tx = getX(tp.time);
+    const ty = getY(tp.score);
+
+    graphCtx.save();
+    // 縦ライン
+    graphCtx.strokeStyle = 'rgba(236, 72, 153, 0.7)';
+    graphCtx.lineWidth = 1.5;
+    graphCtx.setLineDash([2, 2]);
+    graphCtx.beginPath();
+    graphCtx.moveTo(tx, padT + 8);
+    graphCtx.lineTo(tx, padT + plotH);
+    graphCtx.stroke();
+
+    // バッジ背景
+    graphCtx.shadowColor = 'rgba(236, 72, 153, 0.9)';
+    graphCtx.shadowBlur = 8;
+    graphCtx.fillStyle = '#ec4899';
+    graphCtx.beginPath();
+    graphCtx.arc(tx, ty, 8, 0, Math.PI * 2);
+    graphCtx.fill();
+
+    // バッジ番号テキスト (① ② ③)
+    graphCtx.shadowBlur = 0;
+    graphCtx.fillStyle = '#ffffff';
+    graphCtx.font = 'bold 10px sans-serif';
+    graphCtx.textAlign = 'center';
+    graphCtx.textBaseline = 'middle';
+    graphCtx.fillText(tp.index, tx, ty);
+
+    // 時間ラベル
+    graphCtx.font = '9px sans-serif';
+    graphCtx.fillStyle = '#f472b6';
+    graphCtx.fillText(`${tp.time.toFixed(1)}s`, tx, padT + 4);
+
+    graphCtx.restore();
+  });
+}
+
+// --- 人生の転機リスト（3つのドラマ）のDOM生成 ---
+function renderTurningPointsList(turningPoints) {
+  if (!turningPointsList) return;
+  turningPointsList.innerHTML = '';
+
+  turningPoints.forEach(tp => {
+    const card = document.createElement('div');
+    card.className = 'tp-card';
+    card.innerHTML = `
+      <div class="tp-card-header">
+        <span class="tp-badge">${tp.index}</span>
+        <span class="tp-time">${tp.time.toFixed(1)}秒の転換</span>
+      </div>
+      <div class="tp-title">${tp.title}</div>
+      <div class="tp-desc">${tp.desc}</div>
+      <span class="tp-tag ${tp.tagClass}">${tp.tag}</span>
+    `;
+    turningPointsList.appendChild(card);
+  });
+}
+

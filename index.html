@@ -68,6 +68,29 @@
           <p class="result-comment" id="result-comment">
             波に身を任せ、限られた選択の中で精一杯歩んだ人生でした。
           </p>
+
+          <!-- 30秒の幸福度変遷グラフ -->
+          <div class="graph-section">
+            <div class="graph-header">
+              <span class="graph-title">📈 人生30年の幸福度変遷グラフ</span>
+              <div class="graph-legend">
+                <span class="legend-item"><span class="legend-dot manual"></span>あなたの決断</span>
+                <span class="legend-item"><span class="legend-dot turning"></span>人生の転機</span>
+              </div>
+            </div>
+            <div class="graph-canvas-box">
+              <canvas id="graphCanvas" width="760" height="170"></canvas>
+            </div>
+          </div>
+
+          <!-- 人生の転機（3つのドラマ） -->
+          <div class="turning-points-section">
+            <h3 class="tp-heading">📜 あなたの人生を分けた3つの転機</h3>
+            <div class="turning-points-list" id="turning-points-list">
+              <!-- JSで動的生成 -->
+            </div>
+          </div>
+
           <div class="result-stats">
             <div class="stat-item">
               <span class="stat-label">自分の選択実行</span>
