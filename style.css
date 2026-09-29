@@ -619,7 +619,7 @@ kbd {
   color: #fff;
 }
 
-/* デフォルトガイド切り替え */
+/* ガイド切り替えデフォルト */
 .guide-mobile {
   display: none;
 }
@@ -627,9 +627,8 @@ kbd {
   display: block;
 }
 
-/* --- モバイル環境（Android / スマホアクセス時）のスタイル --- */
-body.is-mobile,
-@media (max-width: 768px) {
+/* --- モバイル環境（Android / スマホ / 画面幅768px以下）のスタイル --- */
+@media screen and (max-width: 768px) {
   body {
     padding: 6px;
     align-items: flex-start;
@@ -645,6 +644,7 @@ body.is-mobile,
   /* HUD のコンパクト化 */
   .hud {
     width: 100%;
+    max-width: 100%;
     gap: 6px;
   }
 
@@ -676,16 +676,17 @@ body.is-mobile,
 
   /* キャンバス領域のレスポンシブ化 */
   .canvas-wrapper {
-    width: 100%;
-    height: auto;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
     aspect-ratio: 900 / 600;
-    max-height: 50vh;
+    max-height: 52vh;
     border-radius: 12px;
   }
 
   /* モバイルコントローラーの有効化 */
   .mobile-controls {
-    display: flex;
+    display: flex !important;
   }
 
   .guide-pc {
@@ -698,6 +699,7 @@ body.is-mobile,
 
   .footer-guide {
     width: 100%;
+    max-width: 100%;
     font-size: 0.75rem;
     padding: 0 6px;
   }
@@ -808,8 +810,20 @@ body.is-mobile,
   }
 }
 
+/* html/body に .is-mobile がある場合も同一スタイルを保証 */
+.is-mobile .mobile-controls {
+  display: flex !important;
+}
+.is-mobile .guide-pc {
+  display: none !important;
+}
+.is-mobile .guide-mobile {
+  display: block !important;
+}
+
 /* Android固有の微調整（フォントやタッチの自然さ） */
-body.is-android {
+body.is-android,
+.is-android {
   font-family: 'Roboto', 'Noto Sans JP', sans-serif;
 }
 

@@ -2,9 +2,24 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>人生の選択と運命の波 - Life Choices Game</title>
-  <link rel="stylesheet" href="style.css">
+  <script>
+    // ページ読み込み前に即時判定してクラスを付与
+    (function() {
+      var ua = navigator.userAgent || '';
+      var isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(ua) || (window.innerWidth <= 768);
+      var isAndroid = /Android/i.test(ua);
+      var root = document.documentElement;
+      if (isMobile) {
+        root.classList.add('is-mobile');
+        if (isAndroid) root.classList.add('is-android');
+      } else {
+        root.classList.add('is-pc');
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="style.css?v=2.2">
 </head>
 <body>
   <div class="game-container">
@@ -145,6 +160,6 @@
     </footer>
   </div>
 
-  <script src="game.js"></script>
+  <script src="game.js?v=2.2"></script>
 </body>
 </html>
