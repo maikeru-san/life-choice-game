@@ -25,6 +25,7 @@ const startOverlay = document.getElementById('start-overlay');
 const startBtn = document.getElementById('start-btn');
 const resultOverlay = document.getElementById('result-overlay');
 const replayBtn = document.getElementById('replay-btn');
+const replayBtnTop = document.getElementById('replay-btn-top');
 
 const finalScoreDisplay = document.getElementById('final-score');
 const resultRankDisplay = document.getElementById('result-rank');
@@ -37,6 +38,9 @@ const statMinScore = document.getElementById('stat-min-score');
 const graphCanvas = document.getElementById('graphCanvas');
 const graphCtx = graphCanvas ? graphCanvas.getContext('2d') : null;
 const turningPointsList = document.getElementById('turning-points-list');
+
+// 30秒を「人生100年」に換算するヘルパー (0s = 0歳, 30s = 100歳)
+const timeToAge = (t) => Math.min(100, Math.max(0, Math.round((t / GAME_DURATION) * 100)));
 
 // --- ゲーム状態管理 ---
 let gameState = 'ready'; // 'ready' | 'playing' | 'ended'
@@ -566,6 +570,9 @@ function replayGame() {
 // クリックイベント
 startBtn.addEventListener('click', startGame);
 replayBtn.addEventListener('click', replayGame);
+if (replayBtnTop) {
+  replayBtnTop.addEventListener('click', replayGame);
+}
 
 // 初期起動
 resetGame();
@@ -661,60 +668,163 @@ function detectTurningPoints() {
   // 時間順（① ② ③）にソート
   selected.sort((a, b) => a.time - b.time);
 
-  // 各転機にドラマチックなタイトル・説明文・タグを割り当て
+  // 各転機に「人生100年」の年齢に応じたリアルなタイトル・説明文を割り当て
   return selected.map((tp, idx) => {
+    const age = timeToAge(tp.time);
     let title = '';
     let desc = '';
     let tag = '';
     let tagClass = 'rise';
 
-    if (tp.isManual) {
-      if (tp.delta > 10) {
-        title = '自らの決断による飛躍';
-        desc = '周囲の波に流されず下した英断。自ら切り拓いた新天地が、大きな上昇気流を捉えた決定的な瞬間。';
-        tag = '自らの決断';
-        tagClass = 'decision';
-      } else if (tp.delta < -10) {
-        title = '果敢な挑戦と蹉跌';
-        desc = '現状打破を狙って下した自らの選択。しかし飛び込んだ新世界には、予想以上の激しい逆風が待ち受けていた。';
-        tag = '自らの決断';
-        tagClass = 'decision';
+    if (age < 23) {
+      // --- 幼少・青春期 (0〜22歳) ---
+      if (tp.isManual) {
+        if (tp.delta > 0) {
+          title = '進路の自立と大きな飛躍';
+          desc = `親や周囲の敷いたレールを脱し、自らの意志で未知の道を選択。この決断が才能を大きく開花させる契機となった。`;
+          tag = '自らの決断';
+          tagClass = 'decision';
+        } else {
+          title = '若気の至りと挫折';
+          desc = `周囲の反対を押し切って挑んだ背伸びの挑戦。しかし世間の壁は厚く、孤独と苦い挫折を味わうことになった。`;
+          tag = '自らの決断';
+          tagClass = 'decision';
+        }
+      } else if (tp.type === 'valley') {
+        title = '思春期の葛藤からの脱却';
+        desc = `自分らしさに悩み抜いた多感な思春期の暗雲を抜け、生涯の友や恩師との出会いによって光を見出した転機。`;
+        tag = '心の成長';
+        tagClass = 'rise';
+      } else if (tp.type === 'peak' || tp.delta > 10) {
+        title = '学生時代の才能開花と栄光';
+        desc = `学業や部活動・創作で一気に頭角を現し、自信と熱気に満ち溢れた青春最高の黄金期。`;
+        tag = '青春の輝き';
+        tagClass = 'rise';
       } else {
-        title = '静かなる覚悟の舵切り';
-        desc = '周囲が気づかぬうちに下した自分だけの選択。この時の進路変更が、後の運命の大きな伏線となった。';
-        tag = '自らの決断';
-        tagClass = 'decision';
+        title = '家庭や学校の環境の激変';
+        desc = `自力では抗えない環境の変化や人間関係の軋轢。世の中の不条理を初めて痛感した試練の時期。`;
+        tag = '多感な試練';
+        tagClass = 'fall';
       }
-    } else if (tp.type === 'valley') {
-      title = 'どん底からのV字再起';
-      desc = '耐え難い苦境の底を打ち、新たな潮目を掴んだ瞬間。ここから人生の劇的な逆転ドラマが幕を開けた。';
-      tag = '奇跡の再起';
-      tagClass = 'rise';
-    } else if (tp.type === 'peak') {
-      title = '栄華を極めた絶頂期';
-      desc = 'あらゆる巡り合わせが味方し、人生最大の高みに到達。これまでの道のりが結実した至福のひととき。';
-      tag = '至福の頂点';
-      tagClass = 'rise';
-    } else if (tp.delta > 15) {
-      title = '青雲の志・予期せぬ追い風';
-      desc = '思いがけない幸運の波が一気に押し寄せ、自分の想像を超えた場所へと背中を押された飛躍の転機。';
-      tag = '運命の追い風';
-      tagClass = 'rise';
-    } else if (tp.delta < -15) {
-      title = '突然の逆風・不条理な試練';
-      desc = '平穏だった日々に突如吹き荒れた冷たい逆風。抗うことのできない人生の不条理を痛感させられた試練の時。';
-      tag = '時代の逆風';
-      tagClass = 'fall';
+    } else if (age < 36) {
+      // --- 青年・社会人初期 (23〜35歳) ---
+      if (tp.isManual) {
+        if (tp.delta > 0) {
+          title = '電撃転職・独立の成功';
+          desc = `安定に安住せず、自らの可能性を信じて新天地へダイブ。リスクを背負った決断が大きなキャリアアップを引き寄せた。`;
+          tag = '自らの決断';
+          tagClass = 'decision';
+        } else {
+          title = '新境地での予期せぬ蹉跌';
+          desc = `現状打破を狙って打って出た大勝負。しかし飛び込んだ世界は想像以上に厳しく、手痛い代償を払うことに。`;
+          tag = '自らの決断';
+          tagClass = 'decision';
+        }
+      } else if (tp.type === 'valley') {
+        title = 'どん底からの再起と覚醒';
+        desc = `仕事の失敗や失恋など深い挫折を経験するも、不屈の反骨心で這い上がり、一回り大きな器を手に入れた復活劇。`;
+        tag = '奇跡の再起';
+        tagClass = 'rise';
+      } else if (tp.type === 'peak' || tp.delta > 10) {
+        title = '大抜擢・運命のパートナーとの出会い';
+        desc = `仕事で大きな成果を上げ、プライベートでも運命的な出会いに恵まれるなど、人生の階段を一気に駆け上がった瞬間。`;
+        tag = '飛躍の季節';
+        tagClass = 'rise';
+      } else {
+        title = '激務と重圧によるスランプ';
+        desc = `理想と現実のギャップ、責任の重さに打ちのめされ、心身ともに限界を試された過酷な社会の荒波。`;
+        tag = '厳しい試練';
+        tagClass = 'fall';
+      }
+    } else if (age < 56) {
+      // --- 壮年・ミドル期 (36〜55歳) ---
+      if (tp.isManual) {
+        if (tp.delta > 0) {
+          title = '後半生を見据えた乾坤一擲の舵切り';
+          desc = `これまでの実績に甘んじることなく、真の天職を求めて大勝負に出た英断。人生のステージを一段押し上げた。`;
+          tag = '自らの決断';
+          tagClass = 'decision';
+        } else {
+          title = '重責の中での苦渋の選択';
+          desc = `組織や家族を守るために下した苦しい決断。背負うものが大きくなったからこその重い代償と葛藤。`;
+          tag = '自らの決断';
+          tagClass = 'decision';
+        }
+      } else if (tp.type === 'valley') {
+        title = 'ミドルエイジ危機からの起死回生';
+        desc = `人生の折り返し地点で訪れた停滞期を、家族や仲間の絆で乗り越え、再び力強く立ち上がった転換点。`;
+        tag = '絆による再起';
+        tagClass = 'rise';
+      } else if (tp.type === 'peak' || tp.delta > 10) {
+        title = '社会的成功と家庭の円熟';
+        desc = `長年培った経験と人脈が結実し、確固たる地位と人望を獲得。人生最大の充実感と誇りに包まれた絶頂期。`;
+        tag = '人生の絶頂';
+        tagClass = 'rise';
+      } else {
+        title = '予期せぬ逆風・健康の不安';
+        desc = `体力の過信や環境の急変により、思わぬブレーキがかかる。自分の限界と向き合うことを余儀なくされた時期。`;
+        tag = '人生の試練';
+        tagClass = 'fall';
+      }
+    } else if (age < 76) {
+      // --- 実年・シニア期 (56〜75歳) ---
+      if (tp.isManual) {
+        if (tp.delta > 0) {
+          title = '第2の人生・悠々自適の挑戦';
+          desc = `これまでのしがらみを手放し、長年の夢だった新たなライフワークや地域活動へ。自由と情熱を取り戻した決断。`;
+          tag = '自らの決断';
+          tagClass = 'decision';
+        } else {
+          title = '晩節の挑戦と厳しい誤算';
+          desc = `退職後の新たな試みに出たものの、時代の急激な変化に直面し、思いがけない苦境に立たされた瞬間。`;
+          tag = '自らの決断';
+          tagClass = 'decision';
+        }
+      } else if (tp.type === 'valley') {
+        title = '喪失を乗り越えた新たな生きがい';
+        desc = `親しい人との別れや役割の喪失による孤独を乗り越え、新しい趣味やコミュニティで人生の豊かさを再発見。`;
+        tag = '心の再生';
+        tagClass = 'rise';
+      } else if (tp.type === 'peak' || tp.delta > 10) {
+        title = '知恵と経験がもたらす豊かな実り';
+        desc = `人生の重荷から解放され、後進の育成や趣味に没頭。長年の苦労が報われるような、穏やかで輝かしい黄金期。`;
+        tag = '円熟の輝き';
+        tagClass = 'rise';
+      } else {
+        title = '体力の衰えと別れの寂寥';
+        desc = `身体の変調や時代の移り変わりに寂しさを覚えるなど、人生の秋を迎えたことを静かに実感させられた時期。`;
+        tag = '人生の黄昏';
+        tagClass = 'fall';
+      }
     } else {
-      title = '平穏なる日常の拠り所';
-      desc = '激しい波乱をくぐり抜け、ようやく訪れた穏やかな凪。自分にとって本当に大切なものを見出した転換点。';
-      tag = '平穏と安息';
-      tagClass = 'rise';
+      // --- 晩年・百寿期 (76〜100歳) ---
+      if (tp.isManual) {
+        title = '生きた証の継承と終活の覚悟';
+        desc = `自らの歩んできた100年を慈しみ、次の世代へ想いやバトンを託す最後の尊い決断。心に深い安らぎが宿る。`;
+        tag = '至高の決断';
+        tagClass = 'decision';
+      } else if (tp.type === 'valley') {
+        title = '病魔を克服した奇跡の生命力';
+        desc = `大病や体調の危機を奇跡的に乗り越え、生かされていることへの深い感謝と喜びに目覚めた瞬間。`;
+        tag = '生命の奇跡';
+        tagClass = 'rise';
+      } else if (tp.type === 'peak' || tp.delta > 10) {
+        title = '百寿の徳・愛と感謝に包まれた日々';
+        desc = `子や孫、周囲の人々の温かい愛に包まれ、波乱万丈だった我が人生のすべてを肯定できた至福の境地。`;
+        tag = '百寿の大往生';
+        tagClass = 'rise';
+      } else {
+        title = '静寂と命の灯火を見つめる日々';
+        desc = `かつての友が去り、静けさの中でこれまでの旅路を静かに振り返る。命の儚さと美しさを噛みしめる時間。`;
+        tag = '静寂の時';
+        tagClass = 'fall';
+      }
     }
 
     return {
       index: idx + 1,
       time: tp.time,
+      age: age,
       score: tp.score,
       isManual: tp.isManual,
       title: title,
@@ -758,11 +868,11 @@ function renderResultGraph(turningPoints) {
   const getX = (t) => padL + (Math.max(0, Math.min(GAME_DURATION, t)) / GAME_DURATION) * plotW;
   const getY = (s) => zeroY - (s / maxAbs) * (plotH / 2);
 
-  // 1. 背景グリッドと時間目盛り
+  // 1. 背景グリッドと年齢目盛り (人生100年: 6秒 = 20歳刻み)
   graphCtx.save();
 
-  // 5秒刻みの縦グリッド
-  for (let sec = 0; sec <= GAME_DURATION; sec += 5) {
+  for (let age = 0; age <= 100; age += 20) {
+    const sec = (age / 100) * GAME_DURATION; // 0s, 6s, 12s, 18s, 24s, 30s
     const x = getX(sec);
     graphCtx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
     graphCtx.lineWidth = 1;
@@ -772,11 +882,11 @@ function renderResultGraph(turningPoints) {
     graphCtx.lineTo(x, padT + plotH);
     graphCtx.stroke();
 
-    // 時間ラベル
-    graphCtx.fillStyle = 'rgba(148, 163, 184, 0.8)';
-    graphCtx.font = '10px sans-serif';
+    // 年齢ラベル (0歳, 20歳, 40歳, 60歳, 80歳, 100歳)
+    graphCtx.fillStyle = 'rgba(148, 163, 184, 0.9)';
+    graphCtx.font = 'bold 9px sans-serif';
     graphCtx.textAlign = 'center';
-    graphCtx.fillText(`${sec}s`, x, h - 10);
+    graphCtx.fillText(`${age}歳`, x, h - 8);
   }
 
   // 水平ゼロ基準線 (±0 pt)
@@ -857,6 +967,7 @@ function renderResultGraph(turningPoints) {
   manualEvents.forEach(me => {
     const mx = getX(me.time);
     const my = getY(me.score);
+    const age = timeToAge(me.time);
 
     graphCtx.save();
     // 縦のガイド点線
@@ -883,9 +994,9 @@ function renderResultGraph(turningPoints) {
 
     // 決断ラベル
     graphCtx.fillStyle = '#fbbf24';
-    graphCtx.font = 'bold 9px sans-serif';
+    graphCtx.font = 'bold 8.5px sans-serif';
     graphCtx.textAlign = 'center';
-    graphCtx.fillText('選択', mx, my - 8);
+    graphCtx.fillText('選択', mx, my - 7);
     graphCtx.restore();
   });
 
@@ -915,15 +1026,15 @@ function renderResultGraph(turningPoints) {
     // バッジ番号テキスト (① ② ③)
     graphCtx.shadowBlur = 0;
     graphCtx.fillStyle = '#ffffff';
-    graphCtx.font = 'bold 10px sans-serif';
+    graphCtx.font = 'bold 9.5px sans-serif';
     graphCtx.textAlign = 'center';
     graphCtx.textBaseline = 'middle';
     graphCtx.fillText(tp.index, tx, ty);
 
-    // 時間ラベル
-    graphCtx.font = '9px sans-serif';
+    // 年齢ラベル (約○歳)
+    graphCtx.font = 'bold 8.5px sans-serif';
     graphCtx.fillStyle = '#f472b6';
-    graphCtx.fillText(`${tp.time.toFixed(1)}s`, tx, padT + 4);
+    graphCtx.fillText(`${tp.age}歳`, tx, padT + 4);
 
     graphCtx.restore();
   });
@@ -940,7 +1051,7 @@ function renderTurningPointsList(turningPoints) {
     card.innerHTML = `
       <div class="tp-card-header">
         <span class="tp-badge">${tp.index}</span>
-        <span class="tp-time">${tp.time.toFixed(1)}秒の転換</span>
+        <span class="tp-time">【約${tp.age}歳の転機】</span>
       </div>
       <div class="tp-title">${tp.title}</div>
       <div class="tp-desc">${tp.desc}</div>

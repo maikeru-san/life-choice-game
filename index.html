@@ -59,53 +59,62 @@
       <!-- リザルトオーバーレイ -->
       <div id="result-overlay" class="overlay hidden">
         <div class="overlay-card result-card">
-          <h2 id="result-title">人生の幕引き</h2>
-          <div class="result-score-box">
-            <span class="result-score-label">最終幸福度</span>
-            <div class="result-score-val" id="final-score">±0 pt</div>
-            <div class="result-rank" id="result-rank">平穏な人生</div>
+          <div class="result-header-row">
+            <h2 id="result-title">人生の幕引き（100歳）</h2>
+            <button id="replay-btn-top" class="btn btn-secondary btn-sm">もう一度やり直す</button>
           </div>
+
+          <div class="result-top-summary">
+            <div class="result-score-box">
+              <span class="result-score-label">最終幸福度</span>
+              <div class="result-score-val" id="final-score">±0 pt</div>
+              <div class="result-rank" id="result-rank">平穏な人生</div>
+            </div>
+            <div class="result-stats">
+              <div class="stat-item">
+                <span class="stat-label">自らの決断実行</span>
+                <span class="stat-val" id="stat-manual-count">0 / 5 回</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">最高到達点</span>
+                <span class="stat-val" id="stat-max-score">+0 pt</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">最低到達点</span>
+                <span class="stat-val" id="stat-min-score">-0 pt</span>
+              </div>
+            </div>
+          </div>
+
           <p class="result-comment" id="result-comment">
-            波に身を任せ、限られた選択の中で精一杯歩んだ人生でした。
+            波に身を任せ、限られた選択の中で精一杯歩んだ100年の人生でした。
           </p>
 
-          <!-- 30秒の幸福度変遷グラフ -->
+          <!-- 人生100年の幸福度変遷グラフ -->
           <div class="graph-section">
             <div class="graph-header">
-              <span class="graph-title">📈 人生30年の幸福度変遷グラフ</span>
+              <span class="graph-title">📈 人生100年の幸福度変遷グラフ</span>
               <div class="graph-legend">
                 <span class="legend-item"><span class="legend-dot manual"></span>あなたの決断</span>
                 <span class="legend-item"><span class="legend-dot turning"></span>人生の転機</span>
               </div>
             </div>
             <div class="graph-canvas-box">
-              <canvas id="graphCanvas" width="760" height="170"></canvas>
+              <canvas id="graphCanvas" width="760" height="135"></canvas>
             </div>
           </div>
 
           <!-- 人生の転機（3つのドラマ） -->
           <div class="turning-points-section">
-            <h3 class="tp-heading">📜 あなたの人生を分けた3つの転機</h3>
+            <h3 class="tp-heading">📜 あなたの100年を分けた3つの転機</h3>
             <div class="turning-points-list" id="turning-points-list">
               <!-- JSで動的生成 -->
             </div>
           </div>
 
-          <div class="result-stats">
-            <div class="stat-item">
-              <span class="stat-label">自分の選択実行</span>
-              <span class="stat-val" id="stat-manual-count">0 / 5 回</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">最高到達幸福度</span>
-              <span class="stat-val" id="stat-max-score">+0 pt</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">最低到達幸福度</span>
-              <span class="stat-val" id="stat-min-score">-0 pt</span>
-            </div>
+          <div class="result-footer-row">
+            <button id="replay-btn" class="btn btn-primary btn-lg">もう一度人生をやり直す (Space / クリック)</button>
           </div>
-          <button id="replay-btn" class="btn btn-primary">もう一度やり直す (Space / クリック)</button>
         </div>
       </div>
     </div>
