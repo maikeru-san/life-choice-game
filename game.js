@@ -21,11 +21,53 @@ const scoreDisplay = document.getElementById('score-display');
 const choicesLeftDisplay = document.getElementById('choices-left');
 const choiceDotsContainer = document.getElementById('choice-dots');
 
+// --- デバイス & ブラウザの自動検出 ---
+function detectDevice() {
+  const ua = navigator.userAgent || '';
+  const isAndroid = /Android/i.test(ua);
+  const isWindows = /Windows/i.test(ua);
+  const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(ua) || (window.innerWidth <= 768) || ('ontouchstart' in window);
+  const isChrome = /Chrome/i.test(ua) && !/Edge|Edg|OPR/i.test(ua);
+
+  const root = document.body;
+  if (isMobile) {
+    root.classList.add('is-mobile');
+    if (isAndroid) root.classList.add('is-android');
+  } else {
+    root.classList.add('is-pc');
+    if (isWindows) root.classList.add('is-windows');
+  }
+
+  if (isChrome) {
+    root.classList.add('is-chrome');
+  }
+
+  return { isMobile, isAndroid, isWindows, isChrome };
+}
+
+const deviceInfo = detectDevice();
+
+// リサイズ時にも再判定
+window.addEventListener('resize', () => {
+  const isNarrow = window.innerWidth <= 768;
+  if (isNarrow && !document.body.classList.contains('is-mobile')) {
+    document.body.classList.add('is-mobile');
+    document.body.classList.remove('is-pc');
+  } else if (!isNarrow && !/Android|iPhone|iPad|iPod/i.test(navigator.userAgent) && document.body.classList.contains('is-mobile')) {
+    document.body.classList.remove('is-mobile');
+    document.body.classList.add('is-pc');
+  }
+});
+
 const startOverlay = document.getElementById('start-overlay');
 const startBtn = document.getElementById('start-btn');
 const resultOverlay = document.getElementById('result-overlay');
 const replayBtn = document.getElementById('replay-btn');
 const replayBtnTop = document.getElementById('replay-btn-top');
+
+// スマホ用タッチボタン
+const btnTouchLeft = document.getElementById('btn-touch-left');
+const btnTouchRight = document.getElementById('btn-touch-right');
 
 const finalScoreDisplay = document.getElementById('final-score');
 const resultRankDisplay = document.getElementById('result-rank');
@@ -573,6 +615,51 @@ replayBtn.addEventListener('click', replayGame);
 if (replayBtnTop) {
   replayBtnTop.addEventListener('click', replayGame);
 }
+
+// --- スマホ用タッチ操作ハンドラー（Android触覚バイブレーション付き） ---
+function handleMobileMove(dir) {
+  if (gameState !== 'playing') return;
+  // Android等での触覚フィードバック（軽い振動）
+  if (navigator.vibrate) {
+    try { navigator.vibrate(22); } catch (err) {}
+  }
+  movePlayer(dir, true);
+}
+
+// タッチボタンの即応性向上 (touchstart で300msタップ遅延を排除)
+if (btnTouchLeft) {
+  btnTouchLeft.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    handleMobileMove(-1);
+  }, { passive: false });
+  btnTouchLeft.addEventListener('click', () => {
+    handleMobileMove(-1);
+  });
+}
+
+if (btnTouchRight) {
+  btnTouchRight.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    handleMobileMove(1);
+  }, { passive: false });
+  btnTouchRight.addEventListener('click', () => {
+    handleMobileMove(1);
+  });
+}
+
+// キャンバス画面の左右タップでも移動可能
+canvas.addEventListener('touchstart', (e) => {
+  if (gameState !== 'playing') return;
+  const touch = e.touches[0];
+  const rect = canvas.getBoundingClientRect();
+  const touchX = touch.clientX - rect.left;
+  if (touchX < rect.width / 2) {
+    handleMobileMove(-1);
+  } else {
+    handleMobileMove(1);
+  }
+  e.preventDefault();
+}, { passive: false });
 
 // 初期起動
 resetGame();

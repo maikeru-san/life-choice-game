@@ -119,13 +119,28 @@
       </div>
     </div>
 
+    <!-- スマホ用タッチコントローラー（スマホアクセス時に自動表示） -->
+    <div class="mobile-controls" id="mobile-controls">
+      <button class="mobile-btn btn-left" id="btn-touch-left" aria-label="左へ移動">
+        <span class="btn-arrow">◀</span>
+        <span class="btn-text">左へ移動</span>
+      </button>
+      <button class="mobile-btn btn-right" id="btn-touch-right" aria-label="右へ移動">
+        <span class="btn-text">右へ移動</span>
+        <span class="btn-arrow">▶</span>
+      </button>
+    </div>
+
     <!-- フッター操作説明 -->
     <footer class="footer-guide">
-      <div class="guide-item">
+      <div class="guide-item guide-pc">
         <kbd>←</kbd> <kbd>→</kbd> : 自分の意思で左右に移動 (残り5回)
       </div>
+      <div class="guide-item guide-mobile">
+        👆 下のボタンタップで左右に移動 (残り5回)
+      </div>
       <div class="guide-item fate-notice">
-        ⚡ 3秒ごとに運命の風（左右ランダム移動）が吹きます
+        ⚡ 3秒ごとに運命の風（左右ランダム移動）
       </div>
     </footer>
   </div>

@@ -567,3 +567,249 @@ kbd {
 .fate-notice {
   color: #a78bfa;
 }
+
+/* ===================================================
+   レスポンシブ & デバイス自動適応スタイル
+   (PC: Windows / Chrome, スマホ: Android / Chrome)
+   =================================================== */
+
+/* --- スマホ用タッチコントローラー --- */
+.mobile-controls {
+  display: none;
+  width: 100%;
+  max-width: 520px;
+  gap: 16px;
+  margin-top: 4px;
+}
+
+.mobile-btn {
+  flex: 1;
+  height: 56px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
+  color: #fff;
+  font-size: 1.05rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: all 0.1s ease;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-btn:active {
+  transform: scale(0.96);
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.5);
+}
+
+.mobile-btn .btn-arrow {
+  font-size: 1.3rem;
+  color: #38bdf8;
+}
+
+.mobile-btn:active .btn-arrow {
+  color: #fff;
+}
+
+/* デフォルトガイド切り替え */
+.guide-mobile {
+  display: none;
+}
+.guide-pc {
+  display: block;
+}
+
+/* --- モバイル環境（Android / スマホアクセス時）のスタイル --- */
+body.is-mobile,
+@media (max-width: 768px) {
+  body {
+    padding: 6px;
+    align-items: flex-start;
+  }
+
+  .game-container {
+    width: 100%;
+    max-width: 100%;
+    padding: 4px;
+    gap: 8px;
+  }
+
+  /* HUD のコンパクト化 */
+  .hud {
+    width: 100%;
+    gap: 6px;
+  }
+
+  .hud-item {
+    padding: 6px 8px;
+    border-radius: 8px;
+  }
+
+  .hud-item .label {
+    font-size: 0.7rem;
+  }
+
+  .hud-item .value {
+    font-size: 1.25rem;
+  }
+
+  .hud-item .unit {
+    font-size: 0.75rem;
+  }
+
+  .choice-dot {
+    width: 10px;
+    height: 10px;
+  }
+
+  .sub-label {
+    font-size: 0.65rem;
+  }
+
+  /* キャンバス領域のレスポンシブ化 */
+  .canvas-wrapper {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 900 / 600;
+    max-height: 50vh;
+    border-radius: 12px;
+  }
+
+  /* モバイルコントローラーの有効化 */
+  .mobile-controls {
+    display: flex;
+  }
+
+  .guide-pc {
+    display: none !important;
+  }
+
+  .guide-mobile {
+    display: block !important;
+  }
+
+  .footer-guide {
+    width: 100%;
+    font-size: 0.75rem;
+    padding: 0 6px;
+  }
+
+  /* スタートモーダル (モバイル) */
+  #start-overlay .overlay-card {
+    padding: 20px 16px;
+    width: 95%;
+  }
+
+  #start-overlay h1 {
+    font-size: 1.35rem;
+    margin-bottom: 8px;
+  }
+
+  #start-overlay .concept {
+    font-size: 0.8rem;
+    margin-bottom: 12px;
+  }
+
+  .rules-box {
+    padding: 10px 14px;
+    margin-bottom: 16px;
+  }
+
+  .rules-box ul {
+    font-size: 0.78rem;
+    gap: 6px;
+  }
+
+  /* リザルトモーダル (モバイル) */
+  .overlay-card.result-card {
+    max-width: 98%;
+    max-height: 88vh;
+    padding: 10px 12px;
+    gap: 6px;
+  }
+
+  .result-card h2 {
+    font-size: 1.05rem;
+  }
+
+  .result-top-summary {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .result-score-box {
+    padding: 4px 10px;
+    gap: 10px;
+  }
+
+  .result-score-val {
+    font-size: 1.5rem;
+  }
+
+  .result-rank {
+    font-size: 0.82rem;
+    padding: 2px 8px;
+  }
+
+  .result-stats {
+    padding: 4px 8px;
+  }
+
+  .stat-label {
+    font-size: 0.65rem;
+  }
+
+  .stat-val {
+    font-size: 0.82rem;
+  }
+
+  .result-comment {
+    font-size: 0.74rem;
+    padding: 3px 8px;
+  }
+
+  .graph-canvas-box {
+    height: 110px;
+  }
+
+  /* 人生の転機リストを1列（縦並び）に */
+  .turning-points-list {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    max-height: 160px;
+    overflow-y: auto;
+    padding-right: 2px;
+  }
+
+  .tp-card {
+    padding: 6px 8px;
+  }
+
+  .tp-title {
+    font-size: 0.78rem;
+  }
+
+  .tp-desc {
+    font-size: 0.68rem;
+  }
+
+  .btn-lg {
+    font-size: 0.92rem;
+    padding: 8px 24px;
+    width: 100%;
+  }
+}
+
+/* Android固有の微調整（フォントやタッチの自然さ） */
+body.is-android {
+  font-family: 'Roboto', 'Noto Sans JP', sans-serif;
+}
+
