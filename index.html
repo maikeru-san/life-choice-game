@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>人生の選択と運命の波 - Life Choices Game</title>
+  <title>人生の選択と運命の波 - created by まいける</title>
   <script>
     // ページ読み込み前に即時判定してクラスを付与
     (function() {
@@ -19,7 +19,7 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="style.css?v=2.2">
+  <link rel="stylesheet" href="style.css?v=2.3">
 </head>
 <body>
   <div class="game-container">
@@ -54,7 +54,10 @@
       <!-- スタート前オーバーレイ -->
       <div id="start-overlay" class="overlay">
         <div class="overlay-card">
-          <h1>人生の選択と運命の波</h1>
+          <h1 class="main-title">
+            人生の選択と運命の波
+            <span class="created-by-badge">created by まいける</span>
+          </h1>
           <p class="concept">
             人生の2択の選択とタイミングが、やがて大きな差を生み出します。<br>
             最良の選択肢は存在せず、運の要素が多分に結果を左右します。
@@ -64,7 +67,7 @@
               <li><strong>緑のドット</strong>があなたです。乗っている長方形（柱）とともに上下動します。</li>
               <li><strong>上に行くほど幸福 (+)、下に行くほど不幸 (-)</strong> です。</li>
               <li><strong>3秒ごと</strong>に「運命の流れ」によって左右どちらかに自動移動します。</li>
-              <li>あなたは<strong>30秒のうち5回だけ</strong>、自分の意思で <kbd>←</kbd> <kbd>→</kbd> キーで左右に移動できます。</li>
+              <li>あなたは<strong>30秒のうち5回だけ</strong>、自分の意思で左右に移動できます。</li>
             </ul>
           </div>
           <button id="start-btn" class="btn btn-primary">人生を始める (Space / クリック)</button>
@@ -75,7 +78,7 @@
       <div id="result-overlay" class="overlay hidden">
         <div class="overlay-card result-card">
           <div class="result-header-row">
-            <h2 id="result-title">人生の幕引き（100歳）</h2>
+            <h2 id="result-title">人生の幕引き（100歳） <span class="created-by-sub">created by まいける</span></h2>
             <button id="replay-btn-top" class="btn btn-secondary btn-sm">もう一度やり直す</button>
           </div>
 
@@ -157,9 +160,12 @@
       <div class="guide-item fate-notice">
         ⚡ 3秒ごとに運命の風（左右ランダム移動）
       </div>
+      <div class="guide-item creator-credit">
+        created by まいける
+      </div>
     </footer>
   </div>
 
-  <script src="game.js?v=2.2"></script>
+  <script src="game.js?v=2.3"></script>
 </body>
 </html>
